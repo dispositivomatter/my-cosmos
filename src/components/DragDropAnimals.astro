@@ -1,0 +1,243 @@
+---
+import MessageCard from './MessageCard.astro';
+
+
+---
+
+<div class="container">
+  <div class="animals-container">
+    <img
+      src="/src/assets/gato.png"
+      alt="Gato"
+      draggable="true"
+      data-animal="cat"
+      class="animal-image"
+    />
+    <img
+      src="/src/assets/dog.png"
+      alt="Dog"
+      draggable="true"
+      data-animal="dog"
+      class="animal-image"
+    />
+    <img
+      src="/src/assets/bird.png"
+      alt="Bird"
+      draggable="true"
+      data-animal="bird"
+      class="animal-image"
+    />
+    <img
+      src="/src/assets/leon.jpg"
+      alt="Lion"
+      draggable="true"
+      data-animal="lion"
+      class="animal-image"
+    />
+  </div>
+
+  <div id="dropZone" class="drop-zone">
+    <p>Drop animals here</p>
+    <div id="droppedImages" class="dropped-images"></div>
+  </div>
+
+  <MessageCard id="messageCard" />
+  
+  <button id="resetButton" class="reset-button">Reset Drop Zone</button>
+</div>
+
+<script>
+  import { checkAnimalCombination } from '../utils/animalCombinations';
+
+  class DragDropManager {
+    private droppedAnimals: string[] = [];
+    private dropZone: HTMLElement | null;
+    private messageCard: HTMLElement | null;
+    private droppedImages: HTMLElement | null;
+    private resetButton: HTMLElement | null;
+
+    constructor() {
+      this.dropZone = document.getElementById('dropZone');
+      this.messageCard = document.getElementById('messageCard');
+      this.droppedImages = document.getElementById('droppedImages');
+      this.resetButton = document.getElementById('resetButton');
+      this.initialize();
+    }
+
+    private initialize() {
+      document.querySelectorAll('.animal-image').forEach(img => {
+        img.addEventListener('dragstart', this.handleDragStart.bind(this));
+      });
+
+      if (this.dropZone) {
+        this.dropZone.addEventListener('dragover', this.handleDragOver.bind(this));
+        this.dropZone.addEventListener('drop', this.handleDrop.bind(this));
+      }
+
+      if (this.resetButton) {
+        this.resetButton.addEventListener('click', this.handleReset.bind(this));
+      }
+    }
+
+    private handleDragStart(e: DragEvent) {
+      if (e.target instanceof HTMLImageElement) {
+        e.dataTransfer?.setData('text/plain', e.target.dataset.animal || '');
+        e.dataTransfer?.setData('image/src', e.target.src);
+      }
+    }
+
+    private handleDragOver(e: DragEvent) {
+      e.preventDefault();
+      if (this.dropZone) {
+        this.dropZone.classList.add('drag-over');
+      }
+    }
+
+    private handleDrop(e: DragEvent) {
+      e.preventDefault();
+      if (this.dropZone) {
+        this.dropZone.classList.remove('drag-over');
+      }
+
+      const animal = e.dataTransfer?.getData('text/plain');
+      const imageSrc = e.dataTransfer?.getData('image/src');
+      
+      if (animal && imageSrc && !this.droppedAnimals.includes(animal)) {
+        this.addDroppedAnimal(animal, imageSrc);
+      }
+    }
+
+    private handleReset() {
+      this.droppedAnimals = [];
+      if (this.droppedImages) {
+        this.droppedImages.innerHTML = '';
+      }
+      if (this.messageCard) {
+        this.messageCard.classList.add('hidden');
+      }
+    }
+
+    private addDroppedAnimal(animal: string, imageSrc: string) {
+      if (this.droppedAnimals.length >= 2) {
+        this.droppedAnimals = [];
+        if (this.droppedImages) {
+          this.droppedImages.innerHTML = '';
+        }
+        if (this.messageCard) {
+          this.messageCard.classList.add('hidden');
+        }
+      }
+
+      this.droppedAnimals.push(animal);
+      
+      if (this.droppedImages) {
+        const img = document.createElement('img');
+        img.src = imageSrc;
+        img.classList.add('dropped-image');
+        this.droppedImages.appendChild(img);
+      }
+
+      this.checkCombination();
+    }
+
+    private checkCombination() {
+      const message = checkAnimalCombination(this.droppedAnimals);
+      
+      if (message && this.messageCard) {
+        const messageText = this.messageCard.querySelector('.message-text');
+        if (messageText) {
+          messageText.textContent = message;
+          this.messageCard.classList.remove('hidden');
+        }
+      }
+    }
+  }
+
+  // Initialize the drag and drop manager when the DOM is loaded
+  document.addEventListener('DOMContentLoaded', () => {
+    new DragDropManager();
+  });
+</script>
+
+<style>
+  .container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 1rem;
+  }
+
+  .animals-container {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+
+  .animal-image {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    cursor: move;
+    border-radius: 8px;
+    transition: transform 0.2s;
+  }
+
+  .animal-image:hover {
+    transform: scale(1.05);
+  }
+
+  .drop-zone {
+    border: 3px solid black;
+    min-height: 300px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #666;
+    margin-bottom: 2rem;
+    transition: border-color 0.3s;
+  }
+
+  .drop-zone.drag-over {
+    border-color: #4CAF50;
+    background-color: rgba(76, 175, 80, 0.1);
+  }
+
+  .dropped-images {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .dropped-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #4CAF50;
+  }
+
+  .reset-button {
+    display: block;
+    margin: 1rem auto;
+    padding: 0.75rem 1.5rem;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .reset-button:hover {
+    background-color: #c82333;
+  }
+
+  .reset-button:active {
+    transform: translateY(1px);
+  }
+</style>

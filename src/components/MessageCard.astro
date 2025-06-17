@@ -1,0 +1,27 @@
+---
+interface Props {
+  id: string;
+}
+
+const { id } = Astro.props;
+---
+
+<div id={id} class="message-card hidden">
+  <p class="message-text"></p>
+</div>
+
+<style>
+  .message-card {
+    background-color: #f0f0f0;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.5rem;
+    margin-top: 1rem;
+    color: #333;
+  }
+
+  .hidden {
+    display: none;
+  }
+</style>
